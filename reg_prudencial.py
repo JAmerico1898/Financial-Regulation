@@ -155,7 +155,7 @@ elif modulo == "1️⃣ Ativos Ponderados por Risco (RWA)":
 # ==================== MÓDULO 2: SIMULADOR DE RISCO DE CRÉDITO ====================
 elif modulo == "2️⃣ Simulador de Risco de Crédito":
     st.header("Módulo 2: Provisões e Ciclo de Crédito")
-    st.markdown("**Objetivo**: ver na prática por que o IFRS 9 reduz a prociclicidade e cria colchão antes da crise")
+    st.markdown("**Objetivo**: ver na prática por que a Res 4966 reduz a prociclicidade e cria colchão antes da crise")
 
     col1, col2 = st.columns(2)
     with col1:
@@ -163,7 +163,7 @@ elif modulo == "2️⃣ Simulador de Risco de Crédito":
         carteira = st.number_input("Carteira de empréstimos ($M)", 100, 2000, 500)
         taxa_juros = st.slider("Taxa média de juros anual (%)", 10.0, 25.0, 15.0)
         cenario = st.selectbox("Cenário econômico", ["Boom", "Normal", "Recessão"])
-        modelo = st.radio("Modelo de provisionamento", ["IAS 39 (perda incorrida)", "IFRS 9 (perda esperada)"])
+        modelo = st.radio("Modelo de provisionamento", ["Res 2682 (perda incorrida)", "Res 4966 (perda esperada)"])
 
     # Taxas de inadimplência (PD) por cenário
     if cenario == "Boom":
@@ -178,23 +178,23 @@ elif modulo == "2️⃣ Simulador de Risco de Crédito":
     realized_loss = [carteira * (pd / 100) * lgd for pd in pd_rates]
     total_realized = sum(realized_loss)
 
-    # Provisão base (12-month ECL ≈ 1 % da carteira para IFRS 9 mesmo em bons tempos)
+    # Provisão base (12-month ECL ≈ 1 % da carteira para Res 4966 mesmo em bons tempos)
     base_ifrs9 = carteira * 0.01  # 1 % ao ano (ajuste se quiser mais/menos dramático)
 
     if cenario == "Recessão":
-        front_proportions = [0.35, 0.30, 0.20, 0.10, 0.05]  # IFRS 9 antecipa forte
-        back_proportions = [0.00, 0.05, 0.15, 0.35, 0.45]   # IAS 39 “cliff” no final
+        front_proportions = [0.35, 0.30, 0.20, 0.10, 0.05]  # Res 4966 antecipa forte
+        back_proportions = [0.00, 0.05, 0.15, 0.35, 0.45]   # Res 2682 “cliff” no final
 
-        if modelo == "IFRS 9 (perda esperada)":
+        if modelo == "Res 4966 (perda esperada)":
             provisao = [round(base_ifrs9 + total_realized * p, 1) for p in front_proportions]
         else:
             provisao = [round(0 + total_realized * p, 1) for p in back_proportions]
     else:
-        # Em Boom/Normal o IFRS 9 sempre provisiona mais (conservadorismo)
-        if modelo == "IFRS 9 (perda esperada)":
+        # Em Boom/Normal o Res 4966 sempre provisiona mais (conservadorismo)
+        if modelo == "Res 4966 (perda esperada)":
             provisao = [round(base_ifrs9, 1) for _ in anos]
         else:
-            provisao = [0.0 for _ in anos]  # IAS 39 quase nada em bons tempos
+            provisao = [0.0 for _ in anos]  # Res 2682 quase nada em bons tempos
 
     juros_anual = carteira * (taxa_juros / 100)
     juros = [round(juros_anual, 1) for _ in anos]
@@ -221,15 +221,15 @@ elif modulo == "2️⃣ Simulador de Risco de Crédito":
     st.metric("Lucro Acumulado", f"${sum(lucro):.1f}M")
     
     if cenario != "Recessão":
-        if modelo == "IFRS 9 (perda esperada)":
-            st.info("💡 Em tempos bons o IFRS 9 já provisiona mais que o IAS 39 → constroem colchão antecipado")
+        if modelo == "Res 4966 (perda esperada)":
+            st.info("💡 Em tempos bons a Res 4966 já provisiona mais que a Res 2682 → constrói colchão antecipado")
         else:
-            st.info("📌 IAS 39 praticamente não provisiona em bons tempos (só quando a perda já ocorreu)")
+            st.info("📌 Res 2682 praticamente não provisiona em bons tempos (só quando a perda já ocorreu)")
     else:
-        if modelo == "IFRS 9 (perda esperada)":
-            st.success("✅ IFRS 9 antecipa a perda esperada → cria colchão antes da recessão e estabiliza lucro")
+        if modelo == "Res 4966 (perda esperada)":
+            st.success("✅ Res 4966 antecipa a perda esperada → cria colchão antes da recessão e estabiliza lucro")
         else:
-            st.warning("⚠️ IAS 39: “cliff effect” → lucro inflado no início, depois colapso (crise 2008)")
+            st.warning("⚠️ Res 2682: “cliff effect” → lucro inflado no início, depois colapso (crise 2008)")
 
 # ==================== MÓDULO 3: ALAVANCAGEM ====================
 elif modulo == "3️⃣ Alavancagem x Capital Baseado em Risco":
@@ -365,7 +365,7 @@ else:
     with st.form("quiz"):
         q1 = st.radio("Qual o capital mínimo exigido pelo Basel III (Pilar 1)?", ["4%", "8%", "10.5%"])
         q2 = st.radio("O que o Leverage Ratio tenta evitar?", ["Risco de crédito", "Alavancagem excessiva independentemente do risco dos ativos", "Risco operacional"])
-        q3 = st.checkbox("IFRS 9 é mais conservadora que IAS 39 em recessões")
+        q3 = st.checkbox("Res 4966 é mais conservadora que Res 2682 em recessões")
         
         if st.form_submit_button("Ver resultado"):
             pontos = 0
