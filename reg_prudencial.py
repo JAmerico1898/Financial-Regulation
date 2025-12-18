@@ -81,12 +81,14 @@ elif modulo == "1️⃣ Ativos Ponderados por Risco (RWA)":
     st.markdown("### Aprenda como a composição do portfólio afeta o capital exigido")
     
     with st.expander("🎯 Objetivos de aprendizagem"):
-        st.write("- Entender pesos de risco de crédito por classe de ativo\n- Ver como o RWA impacta o capital mínimo exigido (8%)\n- Comparar estratégias conservadoras vs. agressivas")
+        st.write("- Entender pesos de risco de crédito por classe de ativo\n- Ver como o RWA impacta o capital mínimo exigido (10,5%)\n- Comparar estratégias conservadoras vs. agressivas")
     
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        st.subheader("Monte seu portfólio (total = $100 milhões)")
+        st.subheader("Monte seu Banco")
+        st.latex("(Ativos, $100 milhões; Capital, $12 milhões)")
+        st.latex("")
         
         cash = st.slider("Caixa e títulos públicos (0%)", 0, 100, 20)
         gov_bonds = st.slider("Títulos soberanos AAA (0-20%)", 0, 100-cash, 15)
@@ -102,8 +104,8 @@ elif modulo == "1️⃣ Ativos Ponderados por Risco (RWA)":
         
         # Pesos médios simplificados (Basel III padronizado)
         rwa = (cash * 0 + gov_bonds * 0.1 + mortgages * 0.5 + corp_loans * 1.0 + high_yield * 1.2 + unrated * 1.5) * 1e6
-        required_capital = rwa * 0.08
-        car = (12e6 / rwa) * 100 if rwa > 0 else 100  # Supondo capital inicial de $12M
+        required_capital = rwa * 0.105
+        car = (10.5e6 / rwa) * 100 if rwa > 0 else 100  # Supondo capital inicial de $10,5M
         
         df = pd.DataFrame({
             "Classe de Ativo": ["Caixa", "Títulos Públicos", "Hipotecas", "Corp. IG", "High-Yield", "Não Classificado"],
@@ -113,6 +115,10 @@ elif modulo == "1️⃣ Ativos Ponderados por Risco (RWA)":
         })
         
         st.dataframe(df, use_container_width=True)
+
+        st.metric("Ativos Totais", f"${total_assets}M")
+        st.metric("RWA Total", f"${rwa/1e6:.1f}M")
+        st.metric("Capital Mínimo Exigido (10,5%)", f"${required_capital/1e6:.2f}M")
     
     with col2:
         st.subheader("Dashboard em Tempo Real")
@@ -123,36 +129,38 @@ elif modulo == "1️⃣ Ativos Ponderados por Risco (RWA)":
         fig_bar = px.bar(df, x="Classe de Ativo", y="RWA Contribuição ($M)", title="Contribuição para RWA")
         st.plotly_chart(fig_bar, use_container_width=True)
         
-        st.metric("Ativos Totais", f"${total_assets}M")
-        st.metric("RWA Total", f"${rwa/1e6:.1f}M")
-        st.metric("Capital Mínimo Exigido (8%)", f"${required_capital/1e6:.1f}M")
-        
-        fig_gauge = go.Figure(go.Indicator(
-            mode = "gauge+number+delta",
-            value = car,
-            domain = {'x': [0, 1], 'y': [0, 1]},
-            title = {'text': "Capital Adequacy Ratio (CAR)"},
-            delta = {'reference': 10.5},
-            gauge = {
-                'axis': {'range': [None, 25]},
-                'bar': {'color': "darkblue"},
-                'steps': [
-                    {'range': [0, 8], 'color': "red"},
-                    {'range': [8, 10.5], 'color': "orange"},
-                    {'range': [10.5, 25], 'color': "green"}
-                ],
-                'threshold': {
-                    'line': {'color': "red", 'width': 4},
-                    'thickness': 0.75,
-                    'value': 8}}))
-        st.plotly_chart(fig_gauge)
-        
-        if car >= 10.5:
-            st.success("✅ Banco bem capitalizado!")
-        elif car >= 8:
-            st.warning("⚠️ Acima do mínimo, mas abaixo do buffer recomendado")
-        else:
-            st.error("❌ Ratio abaixo do mínimo regulatório!")
+        st.metric("Patrimônio Regulatório", f"${10.5:.1f}M")
+        st.metric("Índice de Basileia (CAR, Patrimônio Regulatório/RWA)", f"{car:.2f}%")
+        st.metric("Buffer de Capital (Índice de Basileia - Mínimo Exigido (10,5%))", f"{(car-10.5):.2f}%")
+
+    col3, col4, col5 = st.columns([1,4,1])
+    with col4:
+      fig_gauge = go.Figure(go.Indicator(
+      mode = "gauge+number+delta",
+      value = car,
+      domain = {'x': [0, 1], 'y': [0, 1]},
+      title = {'text': "Índice de Basileia (CAR, Capital Adequacy Ratio) (em %)"},
+      delta = {'reference': 10.5},
+      gauge = {
+          'axis': {'range': [None, 25]},
+          'bar': {'color': "darkblue"},
+          'steps': [
+              {'range': [0, 8], 'color': "red"},
+              {'range': [8, 10.5], 'color': "orange"},
+              {'range': [10.5, 25], 'color': "green"}
+          ],
+          'threshold': {
+              'line': {'color': "red", 'width': 4},
+              'thickness': 0.75,
+              'value': 8}}))
+      st.plotly_chart(fig_gauge)
+
+      if car >= 10.5:
+          st.success("✅ Banco bem capitalizado!")
+      elif car >= 8:
+          st.warning("⚠️ Acima do mínimo, mas abaixo do buffer recomendado")
+      else:
+          st.error("❌ Ratio abaixo do mínimo regulatório!")
 
 # ==================== MÓDULO 2: SIMULADOR DE RISCO DE CRÉDITO ====================
 elif modulo == "2️⃣ Simulador de Risco de Crédito":
@@ -236,22 +244,29 @@ elif modulo == "2️⃣ Simulador de Risco de Crédito":
 # ==================== MÓDULO 3: ALAVANCAGEM ====================
 elif modulo == "3️⃣ Alavancagem x Capital Baseado em Risco":
     st.header("Módulo 3: As Duas Restrições Simultâneas")
-    st.markdown("Todo banco enfrenta **dois limites**: Capital baseado em risco (CAR, ou Índice de Basileia) e Índice de Alavancagem")
+    st.markdown("Todo banco enfrenta **dois limites**: Capital baseado em risco (CAR, ou Índice de Basileia) e Índice de Alavancagem (contábil)")
     
     capital = st.number_input("Capital próprio ($M)", 50, 300, 100)
     ativos_totais = st.slider("Ativos totais ($M)", 500, 5000, 1500)
-    rwa_percent = st.slider("% dos ativos que são RWA", 40, 100, 70)
-    
+    rwa_percent = st.slider("RWA médio (%) dos ativos", 40, 100, 70)
     rwa = ativos_totais * (rwa_percent / 100)
     car = (capital / rwa) * 100 if rwa > 0 else 0
     leverage = (capital / (ativos_totais)) * 100
-    
-    col1, col2 = st.columns(2)
+
+    col1, col2, col3 = st.columns([3, 3, 3])
     with col1:
+      st.metric("Ativos Ponderados pelo Risco (RWA)", f"${rwa:.0f}M")
+    with col2:
+      st.metric("Índice de Basileia", f"${car:.2f}%")
+    with col3:
+      st.metric("Índice de Alavancagem", f"${leverage:.2f}%")
+   
+    col4, col5 = st.columns(2)
+    with col4:
         fig1 = go.Figure(go.Indicator(mode="gauge+number", value=car, title={'text': "CAR, Índice de Basileia (%)"}, 
                                      gauge={'axis': {'range': [0, 25]}, 'threshold': {'value': 10.5}}))
         st.plotly_chart(fig1)
-    with col2:
+    with col5:
         fig2 = go.Figure(go.Indicator(mode="gauge+number", value=leverage, title={'text': "Índice de Alavancagem (%)"}, 
                                      gauge={'axis': {'range': [0, 15]}, 'threshold': {'value': 3}}))
         st.plotly_chart(fig2)
@@ -285,50 +300,58 @@ elif modulo == "4️⃣ Simulação Integrada - Construa seu Banco":
         roa = st.slider("ROA esperado (retorno sobre ativos %)", 0.0, 8.0, 4.0, 0.1) / 100
         provisao_stress = st.checkbox("Evento de stress/recessão neste ano?")
 
-    # Cálculos do ano
-    novo_ativo = round(st.session_state.ativos * (1 + crescimento / 100), 1)
+    # Cálculos do ano - usar valores ATUAIS antes de incrementar
+    ano_calculado = st.session_state.ano_atual
+    capital_inicial = st.session_state.capital
+    ativos_iniciais = st.session_state.ativos
+
+    novo_ativo = round(ativos_iniciais * (1 + crescimento / 100), 1)
     lucro_bruto = round(novo_ativo * roa, 1)
     payout = 0.5  # 50% do lucro é distribuído como dividendo
-    dividendos = round(lucro_bruto * payout, 1)
 
     if provisao_stress:
         provisao = round(novo_ativo * 0.04, 1)  # stress forte
     else:
         provisao = round(novo_ativo * 0.008, 1)  # normal
 
+    dividendos = round((lucro_bruto - provisao) * payout, 1)
+                      
     delta_capital = lucro_bruto - provisao - dividendos
-    st.session_state.capital = round(st.session_state.capital + delta_capital, 1)
-    st.session_state.ativos = novo_ativo
+    capital_final = round(capital_inicial + delta_capital, 1)
 
     rwa_ratio = st.session_state.rwa_percent / 100
-    car = round(st.session_state.capital / (novo_ativo * rwa_ratio) * 100, 1)
-    leverage = round(st.session_state.capital / novo_ativo * 100, 1)
+    car = round(capital_final / (novo_ativo * rwa_ratio) * 100, 1)
+    leverage = round(capital_final / novo_ativo * 100, 1)
 
     # Dashboard do ano corrente
     colm1, colm2, colm3 = st.columns(3)
-    colm1.metric("Capital", f"${st.session_state.capital:.0f}M", f"{delta_capital:+.0f}M")
+    colm1.metric("Capital", f"${capital_final:.0f}M", f"{delta_capital:+.0f}M")
     colm2.metric("Ativos Totais", f"${novo_ativo:.0f}M")
     colm3.metric("RWA / Ativos", f"{st.session_state.rwa_percent}%")
 
     colm1, colm2, colm3 = st.columns(3)
     colm1.metric("CAR (Capital Adequacy Ratio)", f"{car}%", 
-                 "🟢 OK" if car >= 10.5 else "🔴 Abaixo do requerido")
+                "🟢 OK" if car >= 10.5 else "🔴 Abaixo do requerido")
     colm2.metric("Leverage Ratio", f"{leverage}%", 
-                 "🟢 OK" if leverage >= 3 else "🔴 Abaixo do requerido")
+                "🟢 OK" if leverage >= 3 else "🔴 Abaixo do requerido")
     colm3.metric("ROA realizado", f"{roa*100:.1f}%")
 
     st.metric("Dividendos pagos", f"50% do lucro → ${dividendos}M")
 
-    # Botão de avanço
+    # Botão de avanço - AGORA sim atualiza o session_state
     if st.button("➡️ Avançar para o próximo ano", type="primary"):
         st.session_state.historico.append({
-            "Ano": st.session_state.ano_atual,
-            "Capital": st.session_state.capital,
+            "Ano": ano_calculado,
+            "Capital": capital_final,
             "Ativos": novo_ativo,
             "CAR": car,
             "Leverage": leverage,
             "RWA %": st.session_state.rwa_percent
         })
+        
+        # Atualiza o estado APENAS quando o botão é clicado
+        st.session_state.capital = capital_final
+        st.session_state.ativos = novo_ativo
         st.session_state.ano_atual += 1
 
         if st.session_state.ano_atual > 2027:
@@ -339,7 +362,7 @@ elif modulo == "4️⃣ Simulação Integrada - Construa seu Banco":
             else:
                 st.error("💥 Seu banco violou requisitos regulatórios – intervenção regulatória")
         st.rerun()
-
+            
     # Gráfico histórico
     if st.session_state.historico:
         df_hist = pd.DataFrame(st.session_state.historico)
@@ -455,14 +478,14 @@ elif modulo == "5️⃣ Animação - Regulação Prudencial":
               id: 'basel3',
               title: 'Basileia III (2010)',
               subtitle: 'Resposta à Crise Financeira',
-              description: 'Capital CET1 mínimo de 4,5% + Buffer de Conservação de 2,5% = 7% total. Introdução do Índice de Alavancagem de 3%. Requisitos mais rigorosos para garantir a resiliência do sistema bancário.',
+              description: 'Exigência de capital aumenta para mínimo de 10,5% total. Introdução do Índice de Alavancagem de 3%. Requisitos mais rigorosos para garantir a resiliência do sistema bancário.',
               icon: '🛡️'
             },
             {
               id: 'car',
               title: 'Índice de Adequação de Capital',
               subtitle: 'CAR - Capital Adequacy Ratio',
-              description: 'CAR = Capital Total / RWA × 100%. Mínimo regulatório: 8%. Meta com buffers: 10,5%. Bancos bem capitalizados superam 15%.',
+              description: 'CAR = Capital Total / RWA × 100%. Mínimo regulatório: 10,5%. Bancos bem capitalizados superam 15%.',
               icon: '📊'
             },
             {
@@ -626,7 +649,7 @@ elif modulo == "5️⃣ Animação - Regulação Prudencial":
                   color: 'rgba(255,255,255,0.4)',
                   fontFamily: "'DM Sans', sans-serif"
                 }}>
-                  Min: {min}% | Meta: {target}%
+                  Min: {min}%
                 </div>
               </div>
             );
@@ -1331,8 +1354,8 @@ elif modulo == "5️⃣ Animação - Regulação Prudencial":
                     gap: '20px',
                     marginBottom: '24px'
                   }}>
-                    {renderGauge(bankMetrics.car, 8, 10.5, 'CAR')}
-                    {renderGauge(bankMetrics.leverage, 3, 5, 'Alavancagem')}
+                    {renderGauge(bankMetrics.car, 10.5, 'CAR')}
+                    {renderGauge(bankMetrics.leverage, 3, 'Alavancagem')}
                   </div>
 
                   {/* Metrics */}
@@ -1362,24 +1385,24 @@ elif modulo == "5️⃣ Animação - Regulação Prudencial":
                   <div style={{
                     marginTop: '20px',
                     padding: '16px',
-                    background: bankMetrics.car >= 8 && bankMetrics.leverage >= 3 
+                    background: bankMetrics.car >= 10.5 && bankMetrics.leverage >= 3 
                       ? 'rgba(16,185,129,0.15)'
                       : 'rgba(239,68,68,0.15)',
                     borderRadius: '12px',
-                    border: bankMetrics.car >= 8 && bankMetrics.leverage >= 3
+                    border: bankMetrics.car >= 10.5 && bankMetrics.leverage >= 3
                       ? '1px solid rgba(16,185,129,0.3)'
                       : '1px solid rgba(239,68,68,0.3)',
                     textAlign: 'center'
                   }}>
                     <div style={{ fontSize: '20px', marginBottom: '8px' }}>
-                      {bankMetrics.car >= 8 && bankMetrics.leverage >= 3 ? '✅' : '⚠️'}
+                      {bankMetrics.car >= 10.5 && bankMetrics.leverage >= 3 ? '✅' : '⚠️'}
                     </div>
                     <div style={{
                       fontSize: '12px',
                       fontWeight: '600',
-                      color: bankMetrics.car >= 8 && bankMetrics.leverage >= 3 ? '#10B981' : '#EF4444'
+                      color: bankMetrics.car >= 10.5 && bankMetrics.leverage >= 3 ? '#10B981' : '#EF4444'
                     }}>
-                      {bankMetrics.car >= 8 && bankMetrics.leverage >= 3 ? 'Em Conformidade' : 'Atenção Regulatória'}
+                      {bankMetrics.car >= 10.5 && bankMetrics.leverage >= 3 ? 'Em Conformidade' : 'Atenção Regulatória'}
                     </div>
                     <div style={{
                       fontSize: '10px',
@@ -1387,10 +1410,8 @@ elif modulo == "5️⃣ Animação - Regulação Prudencial":
                       marginTop: '4px'
                     }}>
                       {bankMetrics.car >= 10.5 
-                        ? 'Acima da meta com buffer' 
-                        : bankMetrics.car >= 8 
-                          ? 'Acima do mínimo regulatório'
-                          : 'Abaixo do mínimo'}
+                        ? 'Acima do mínimo regulatório'
+                        : 'Abaixo do mínimo regulatório'}
                     </div>
                   </div>
                 </div>
